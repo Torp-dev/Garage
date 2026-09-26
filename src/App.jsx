@@ -41,28 +41,63 @@ const MONTHS = [
 ]
 const DOW = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']
 
+const DAYPARTS = [
+  { label: 'Morning', times: ['09:00', '10:30'] },
+  { label: 'Noon', times: ['12:00', '13:30'] },
+  { label: 'Evening', times: ['16:00', '17:30'] },
+  { label: 'Night', times: ['18:30', '19:30', '20:30'] },
+]
+
+const hashStr = (s) => {
+  let h = 2166136261
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i)
+    h = Math.imul(h, 16777619)
+  }
+  return h >>> 0
+}
+
+const bookedFor = (y, m, d) => {
+  const dt = new Date(y, m, d)
+  if (dt.getDay() === 0) return []
+  let seed = hashStr(dateKey(y, m, d))
+  const rnd = () => {
+    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0
+    return seed / 4294967296
+  }
+  const all = DAYPARTS.flatMap((p) => p.times)
+  const n = 2 + Math.floor(rnd() * 3)
+  const picked = new Set()
+  while (picked.size < n) picked.add(all[Math.floor(rnd() * all.length)])
+  return [...picked]
+}
+
+const availableFor = (y, m, d) => {
+  const open = slotsFor(y, m, d)
+  if (!open.length) return []
+  const booked = new Set(bookedFor(y, m, d))
+  return open.filter((t) => !booked.has(t))
+}
+
 const slotsFor = (y, m, d) => {
   const dt = new Date(y, m, d)
   if (dt.getDay() === 0) return []
-  const out = []
-  for (let h = 9; h < 18; h++) {
-    for (const mm of [0, 30]) out.push(`${pad(h)}:${pad(mm)}`)
-  }
+  const all = DAYPARTS.flatMap((p) => p.times)
   const now = new Date()
   if (dt.toDateString() === now.toDateString()) {
-    return out.filter((t) => {
+    return all.filter((t) => {
       const [hh, mi] = t.split(':').map(Number)
       return new Date(y, m, d, hh, mi) > now
     })
   }
-  return out
+  return all
 }
 
 const earliestSlot = () => {
   const now = new Date()
   for (let i = 0; i < 14; i++) {
     const dt = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i)
-    const slots = slotsFor(dt.getFullYear(), dt.getMonth(), dt.getDate())
+    const slots = availableFor(dt.getFullYear(), dt.getMonth(), dt.getDate())
     if (slots.length) {
       return {
         y: dt.getFullYear(),
@@ -461,7 +496,13 @@ function App() {
     const daysInMonth = new Date(cy, cm + 1, 0).getDate()
     const atMin = cy === now.getFullYear() && cm === now.getMonth()
     const selKey = day ? dateKey(cy, cm, day) : null
-    const daySlots = day ? slotsFor(cy, cm, day) : []
+    const daySlots = day ? availableFor(cy, cm, day) : []
+    const bookedSlots = day
+      ? bookedFor(cy, cm, day).filter((t) => {
+          const [hh, mi] = t.split(':').map(Number)
+          return new Date(cy, cm, day, hh, mi) > new Date()
+        })
+      : []
     const earliest = earliestSlot()
     const pickDay = (d) => {
       setDay(d)
@@ -469,7 +510,7 @@ function App() {
     }
 
     return (
-      <div className="services">
+      <div className="services appt">
         <div className="services-inner appt-inner">
           <button
             className="back-btn"
@@ -482,6 +523,11 @@ function App() {
           <p className="services-sub">
             {LUX_BRANDS[activeIndex].name} · {service.name}
           </p>
+          <div className="dash-readout">
+            <span>{selKey ? prettyKey(selKey) : '— SELECT DAY —'}</span>
+            <span>{day ? `${daySlots.length} SLOTS` : '···'}</span>
+          </div>
+          <div className="appt-grid">
           <div className="cal-card">
             <div className="cal-head">
               <button
@@ -546,6 +592,7 @@ function App() {
               })}
             </div>
           </div>
+          <div className="times-panel">
           {earliest && (
             <button
               className="earliest"
@@ -564,21 +611,41 @@ function App() {
           )}
           {day ? (
             daySlots.length ? (
-              <>
-                <h3 className="slots-title">Available times</h3>
-                <div className="slots">
-                  {daySlots.map((t) => (
-                    <button
-                      key={t}
-                      type="button"
-                      className={t === timeSel ? 'slot-chip sel' : 'slot-chip'}
-                      onClick={() => setTimeSel(t)}
-                    >
-                      {t}
-                    </button>
-                  ))}
-                </div>
-              </>
+              DAYPARTS.map((part) => {
+                const open = part.times.filter((t) => daySlots.includes(t))
+                const taken = part.times.filter((t) => bookedSlots.includes(t))
+                if (!open.length && !taken.length) return null
+                return (
+                  <div key={part.label} className="daypart">
+                    <p className="daypart-label">{part.label}</p>
+                    <div className="slots">
+                      {open.map((t) => (
+                        <button
+                          key={t}
+                          type="button"
+                          className={
+                            t === timeSel ? 'slot-chip sel' : 'slot-chip'
+                          }
+                          onClick={() => setTimeSel(t)}
+                        >
+                          {t}
+                        </button>
+                      ))}
+                      {taken.map((t) => (
+                        <button
+                          key={t}
+                          type="button"
+                          disabled
+                          title="Already booked"
+                          className="slot-chip booked"
+                        >
+                          {t}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })
             ) : (
               <p className="closed-note">
                 Closed on Sundays — please pick another day.
@@ -587,6 +654,8 @@ function App() {
           ) : (
             <p className="slots-hint">Select a day to see available times</p>
           )}
+          </div>
+          </div>
           {selKey && timeSel && daySlots.includes(timeSel) && (
             <button
               className="book-btn services-confirm"
@@ -615,6 +684,7 @@ function App() {
         >
           ← Appointment
         </button>
+        <div className="book-card">
         <div className="selected-car">
           {logoOk && (
             <img src={LUX_BRANDS[activeIndex].logo} alt="" />
@@ -656,20 +726,26 @@ function App() {
             {name.trim() === '' ? 'Your Name' : name}
           </span>
         </div>
-        <input
-          className="line-input"
-          type="text"
-          placeholder="Name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-        <input
-          className="line-input"
-          type="tel"
-          placeholder="Phone number"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-        />
+        <label className="field">
+          <span>Your name</span>
+          <input
+            className="line-input"
+            type="text"
+            placeholder="e.g. Alex Morgan"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </label>
+        <label className="field">
+          <span>Phone number</span>
+          <input
+            className="line-input"
+            type="tel"
+            placeholder="+49 170 000 000"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+          />
+        </label>
         {ready && (
           <button
             className="book-btn"
@@ -679,6 +755,7 @@ function App() {
             Confirm Booking
           </button>
         )}
+        </div>
       </div>
       {showConfirm && (
         <div className="overlay" onClick={() => setShowConfirm(false)}>

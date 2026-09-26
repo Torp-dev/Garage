@@ -8,9 +8,10 @@ body,
 }
 
 .page {
-  background: #ffffff;
+  background: radial-gradient(circle at 50% 0%, #17171d 0%, #060608 70%);
   min-height: 100vh;
   display: flex;
+  color-scheme: dark;
 }
 
 .left {
@@ -118,7 +119,7 @@ body,
   font-family: 'Poppins', system-ui, sans-serif;
   font-weight: 700;
   font-size: 40px;
-  color: #111111;
+  color: #ffffff;
   margin: 0 0 8px;
 }
 
@@ -126,7 +127,7 @@ body,
   font-family: 'Poppins', system-ui, sans-serif;
   font-weight: 400;
   font-size: 16px;
-  color: #666666;
+  color: #999999;
   margin: 0;
 }
 
@@ -265,7 +266,7 @@ body,
 }
 
 .wheel {
-  --size: min(500px, 44vw);
+  --size: min(480px, 44vw, 58dvh);
   position: relative;
   width: var(--size);
   aspect-ratio: 1 / 1;
@@ -424,6 +425,86 @@ body,
 
 .selected-service strong {
   font-weight: 600;
+}
+
+.book-card {
+  background: #141419;
+  border: 1px solid #2b2b32;
+  border-radius: 20px;
+  padding: 28px;
+  width: min(430px, 100%);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+}
+
+.page .back-btn {
+  color: #999999;
+  margin-bottom: 0;
+}
+
+.page .back-btn:hover {
+  color: #ffffff;
+}
+
+.book-card .selected-car span {
+  color: #f0f0f0;
+}
+
+.book-card .selected-service {
+  border-bottom-color: #33333a;
+  color: #f0f0f0;
+  max-width: none;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.field > span {
+  font-family: 'Poppins', system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #888888;
+}
+
+.book-card .line-input {
+  color: #ffffff;
+  border-bottom-color: #3a3a42;
+  max-width: none;
+}
+
+.book-card .line-input::placeholder {
+  color: #666666;
+}
+
+.book-card .line-input:focus {
+  border-bottom-color: #d4af37;
+}
+
+.book-card .book-btn {
+  width: 100%;
+  background: linear-gradient(180deg, #e6c455, #d4af37);
+  color: #111111;
+  box-shadow: 0 4px 18px rgba(212, 175, 55, 0.35);
+}
+
+.book-card .book-btn:hover {
+  background: linear-gradient(180deg, #f0cd60, #dec04a);
+}
+
+.slot-chip.booked {
+  color: #5a5a62;
+  border-color: #2a2a30;
+  background: transparent;
+  text-decoration: line-through;
+  cursor: not-allowed;
 }
 
 .back-btn {
@@ -674,14 +755,90 @@ body,
 }
 
 .appt-inner {
-  max-width: 720px;
+  max-width: 880px;
+}
+
+.appt {
+  background: radial-gradient(circle at 50% 0%, #17171d 0%, #060608 70%);
+}
+
+.appt h1 {
+  color: #ffffff;
+}
+
+.appt .services-sub {
+  color: #999999;
+}
+
+.appt .back-btn {
+  color: #999999;
+}
+
+.appt .back-btn:hover {
+  color: #ffffff;
+}
+
+.appt .book-btn {
+  background: #d4af37;
+  color: #111111;
+}
+
+.appt .book-btn:hover {
+  background: #e6c455;
+}
+
+.appt-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 24px;
+  margin-top: 16px;
+  align-items: start;
+}
+
+.times-panel {
+  flex: 1;
+  min-width: 0;
+}
+
+.dash-readout {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  background: #000000;
+  border: 1px solid #333333;
+  border-radius: 10px;
+  padding: 10px 16px;
+  margin-top: 8px;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #7cfc00;
+  text-shadow: 0 0 8px rgba(124, 252, 0, 0.5);
+}
+
+.daypart {
+  margin-bottom: 16px;
+}
+
+.daypart:last-child {
+  margin-bottom: 0;
+}
+
+.daypart-label {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #d4af37;
 }
 
 .cal-card {
-  background: #ffffff;
-  border: 1px solid #dddddd;
+  background: #121217;
+  border: 1px solid #2b2b32;
   border-radius: 16px;
-  padding: 20px;
+  padding: 16px;
   margin-top: 8px;
 }
 
@@ -693,21 +850,21 @@ body,
 }
 
 .cal-head strong {
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 600;
-  color: #111111;
+  color: #f0f0f0;
 }
 
 .cal-nav {
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
-  border: 1px solid #dddddd;
-  background: #ffffff;
+  border: 1px solid #3a3a42;
+  background: #1c1c22;
   font-size: 18px;
   line-height: 1;
   cursor: pointer;
-  color: #111111;
+  color: #f0f0f0;
 }
 
 .cal-nav:disabled {
@@ -735,31 +892,34 @@ body,
   background: none;
   border-radius: 50%;
   font-family: 'Poppins', system-ui, sans-serif;
-  font-size: 14px;
-  color: #111111;
+  font-size: 13px;
+  color: #f0f0f0;
   cursor: pointer;
 }
 
 .cal-day:hover:not(:disabled) {
-  background: #f0f0f0;
+  background: #26262e;
 }
 
 .cal-day.today {
-  box-shadow: inset 0 0 0 1.5px #111111;
+  box-shadow: inset 0 0 0 1.5px #d4af37;
 }
 
 .cal-day.sel {
-  background: #111111;
-  color: #ffffff;
+  background: #d4af37;
+  color: #111111;
+  font-weight: 700;
+  box-shadow: 0 0 12px rgba(212, 175, 55, 0.5);
 }
 
 .cal-day:disabled {
-  color: #cccccc;
+  color: #444444;
   cursor: default;
 }
 
 .earliest {
-  margin-top: 16px;
+  margin-top: 0;
+  margin-bottom: 4px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -767,13 +927,13 @@ body,
   width: 100%;
   box-sizing: border-box;
   border: 1px solid #d4af37;
-  background: #fffdf4;
+  background: #1a1a20;
   border-radius: 12px;
   padding: 14px 18px;
   cursor: pointer;
   font-family: 'Poppins', system-ui, sans-serif;
   font-size: 14px;
-  color: #111111;
+  color: #f0f0f0;
   text-align: left;
 }
 
@@ -796,27 +956,39 @@ body,
 }
 
 .slot-chip {
-  border: 1px solid #dddddd;
-  background: #ffffff;
+  border: 1px solid #3a3a42;
+  background: #1c1c22;
   border-radius: 999px;
   padding: 8px 14px;
   font-family: 'Poppins', system-ui, sans-serif;
   font-size: 14px;
-  color: #111111;
+  color: #f0f0f0;
   cursor: pointer;
 }
 
+.slot-chip:hover {
+  border-color: #d4af37;
+}
+
 .slot-chip.sel {
-  background: #111111;
-  color: #ffffff;
-  border-color: #111111;
+  background: #d4af37;
+  color: #111111;
+  border-color: #d4af37;
+  font-weight: 700;
+  box-shadow: 0 0 12px rgba(212, 175, 55, 0.5);
 }
 
 .closed-note,
 .slots-hint {
   margin: 16px 0 0;
   font-size: 14px;
-  color: #666666;
+  color: #999999;
+}
+
+@media (max-width: 720px) {
+  .appt-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 640px) {
