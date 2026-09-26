@@ -164,6 +164,76 @@ const SERVICES = [
   { name: 'AC Service', desc: 'AC cooling check + gas refill', price: 119, icon: ICONS.ac },
 ]
 
+const ADDONS = [
+  { name: 'Interior Cleaning', desc: 'Vacuum + dashboard care', price: 19, icon: 'spark' },
+  { name: 'Exterior Wash', desc: 'Foam wash + wax finish', price: 15, icon: 'wash' },
+  { name: 'Pickup & Drop', desc: 'We collect and return your car', price: 25, icon: 'pin' },
+  { name: 'Express Service', desc: 'Priority lane, done in 2 hours', price: 35, icon: 'bolt' },
+]
+
+const ADDON_ICONS = {
+  spark: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z" />
+      <path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15Z" />
+    </svg>
+  ),
+  wash: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3S6.5 9.5 6.5 14a5.5 5.5 0 0 0 11 0C17.5 9.5 12 3 12 3Z" />
+    </svg>
+  ),
+  pin: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 21s-6.5-5.5-6.5-10.5a6.5 6.5 0 0 1 13 0C18.5 15.5 12 21 12 21Z" />
+      <circle cx="12" cy="10.5" r="2.5" />
+    </svg>
+  ),
+  bolt: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M13 2L5 13.5h5L10 22l8-11.5h-5L13 2Z" />
+    </svg>
+  ),
+}
+
+const addonsTotal = (list) =>
+  list.reduce((s, n) => s + ADDONS.find((a) => a.name === n).price, 0)
+
+const GEARS = ['Car', 'Service', 'Extras', 'Time', 'Details', 'Done']
+
+function GearNav({ step, maxStep, ready, hasSlot, onGo, compact }) {
+  return (
+    <div className={compact ? 'gears compact' : 'gears'}>
+      <div className="gear-track">
+        <span
+          className="gear-progress"
+          style={{ width: `${Math.max(0, ((step - 1) / 5) * 100)}%` }}
+        />
+        {GEARS.map((label, i) => {
+          const g = i + 1
+          const enabled = g === 1 || g <= maxStep || (g === 6 && ready && hasSlot)
+          const cls =
+            'gear' +
+            (g === step ? ' active' : g < step ? ' done' : '') +
+            (enabled ? '' : ' locked')
+          return (
+            <button
+              key={label}
+              type="button"
+              disabled={!enabled}
+              className={cls}
+              onClick={() => onGo(g)}
+            >
+              <span className="gear-num">{g < step ? '✓' : g}</span>
+              {!compact && <span className="gear-label">{label}</span>}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 function App() {
   const location = LOCATIONS[Math.floor(Math.random() * LOCATIONS.length)]
   const [name, setName] = useState('')
@@ -191,6 +261,9 @@ function App() {
   const lastTickT = useRef(0)
   const [logoOk, setLogoOk] = useState(true)
   const [selectedIdx, setSelectedIdx] = useState(0)
+  const [addons, setAddons] = useState([])
+  const [extras, setExtras] = useState(null)
+  const [maxStep, setMaxStep] = useState(0)
   const activeIndex =
     Math.floor((((rotation % 360) + 360) % 360) / (360 / LUX_BRANDS.length)) %
     LUX_BRANDS.length
@@ -319,9 +392,30 @@ function App() {
     }
   }
 
+  const pageStep = !started ? 0 : !entered ? 1 : !service ? 2 : !extras ? 3 : !slot ? 4 : 5
+  const navStep = showConfirm ? 6 : pageStep
+
+  useEffect(() => {
+    if (pageStep > maxStep) setMaxStep(pageStep)
+  }, [pageStep, maxStep])
+
+  const goGear = (g) => {
+    setShowConfirm(false)
+    if (g <= 1) {
+      if (!started) setStarted(true)
+      setEntered(false)
+    } else if (g === 2) setService(null)
+    else if (g === 3) setExtras(null)
+    else if (g === 4) setSlot(null)
+    else if (g === 6 && ready && slot) setShowConfirm(true)
+  }
+
+  const gearProps = { step: navStep, maxStep, ready, hasSlot: !!slot, onGo: goGear }
+
   if (!started) {
     return (
       <div className="intro">
+        <GearNav {...gearProps} />
         <div className="intro-body">
           <h1>Riya Auto Repair</h1>
           <p>Premium car care &amp; service</p>
@@ -342,6 +436,8 @@ function App() {
   if (!entered) {
     return (
       <div className="landing">
+        <GearNav {...gearProps} />
+        <div className="landing-body">
         <div className="landing-text">
           <p className="landing-label">Choose your vehicle</p>
         </div>
@@ -399,12 +495,14 @@ function App() {
         </button>
       </div>
       </div>
+      </div>
     )
   }
 
   if (!service) {
     return (
       <div className="services">
+        <GearNav {...gearProps} />
         <div className="services-inner">
           <button
             className="back-btn"
@@ -488,6 +586,65 @@ function App() {
     )
   }
 
+  if (!extras) {
+    const toggleAddon = (name) => {
+      setAddons((cur) =>
+        cur.includes(name) ? cur.filter((a) => a !== name) : [...cur, name],
+      )
+    }
+    return (
+      <div className="services">
+        <GearNav {...gearProps} />
+        <div className="services-inner">
+          <button
+            className="back-btn"
+            type="button"
+            onClick={() => setService(null)}
+          >
+            ← Services
+          </button>
+          <h1>Make it perfect</h1>
+          <p className="services-sub">Add extras to your {service.name}</p>
+          <div className="service-list plain">
+            {ADDONS.map((a) => {
+              const on = addons.includes(a.name)
+              return (
+                <button
+                  key={a.name}
+                  type="button"
+                  className={on ? 'service-card active' : 'service-card'}
+                  onClick={() => toggleAddon(a.name)}
+                >
+                  <span className="service-icon">{ADDON_ICONS[a.icon]}</span>
+                  <span className="service-info">
+                    <strong>{a.name}</strong>
+                    <small>{a.desc}</small>
+                  </span>
+                  <span className="service-price">+€{a.price}</span>
+                  <span className={on ? 'addon-check on' : 'addon-check'}>
+                    ✓
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+          <div className="extras-bar">
+            <span>
+              {addons.length} selected · +€{addonsTotal(addons)}
+            </span>
+            <button
+              className="book-btn"
+              type="button"
+              onClick={() => setExtras([...addons])}
+            >
+              Confirm Extras
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   if (!slot) {
     const now = new Date()
     const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
@@ -511,6 +668,7 @@ function App() {
 
     return (
       <div className="services appt">
+        <GearNav {...gearProps} />
         <div className="services-inner appt-inner">
           <button
             className="back-btn"
@@ -672,6 +830,8 @@ function App() {
 
   return (
     <div className="page">
+      <GearNav {...gearProps} />
+      <div className="page-body">
       <div className="left">
         <h1>Riya Auto Repair</h1>
         <p>{location}</p>
@@ -700,6 +860,12 @@ function App() {
             {prettyKey(slot.key)} · {slot.time}
           </span>
         </div>
+        {extras.length > 0 && (
+          <div className="selected-service">
+            <span>+ {extras.length} extras</span>
+            <strong>€{addonsTotal(extras)}</strong>
+          </div>
+        )}
         <div className="plate">
           <div className="plate-eu">
             <svg viewBox="0 0 40 40" aria-hidden="true">
@@ -757,9 +923,11 @@ function App() {
         )}
         </div>
       </div>
+      </div>
       {showConfirm && (
         <div className="overlay" onClick={() => setShowConfirm(false)}>
           <div className="card" onClick={(e) => e.stopPropagation()}>
+            <GearNav {...gearProps} compact />
             <div className="card-check">✓</div>
             <h2>Booking Confirmed</h2>
             <p className="card-shop">Riya Auto Repair</p>
@@ -786,6 +954,18 @@ function App() {
             <div className="card-row">
               <span>Shop</span>
               <strong>{location}</strong>
+            </div>
+            {extras.map((n) => (
+              <div key={n} className="card-row">
+                <span>+ {n}</span>
+                <strong>
+                  €{ADDONS.find((a) => a.name === n).price}
+                </strong>
+              </div>
+            ))}
+            <div className="card-row total">
+              <span>Total</span>
+              <strong>€{service.price + addonsTotal(extras)}</strong>
             </div>
             <button
               className="book-btn"
